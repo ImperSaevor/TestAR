@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Unity WebGL - Project VisitedAugm</title>
+    <link rel="shortcut icon" href="TemplateData/favicon.ico">
+    <link rel="stylesheet" href="TemplateData/style.css">
+    
+    <!-- Styles personnalisés pour une meilleure expérience -->
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #232323;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        #unity-container {
+            background: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #unity-canvas {
+            display: block;
+            border-radius: 10px;
+        }
+        
+        #unity-loading-bar {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+        }
+        
+        #unity-progress-bar-empty {
+            width: 300px;
+            height: 20px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+            margin: 20px auto;
+            overflow: hidden;
+        }
+        
+        #unity-progress-bar-full {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        #unity-logo {
+            width: 100px;
+            height: 100px;
+            background: url('TemplateData/unity-logo-dark.png') center center no-repeat;
+            background-size: contain;
+            margin: 0 auto 20px;
+        }
+        
+        #unity-warning {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            display: none;
+        }
+        
+        #unity-footer {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        #unity-fullscreen-button {
+            background: url('TemplateData/fullscreen-button.png') center center no-repeat;
+            background-size: contain;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+        }
+        
+        #unity-fullscreen-button:hover {
+            opacity: 0.8;
+        }
+        
+        .loading-text {
+            color: white;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        
+        /* Styles pour les boutons personnalisés */
+        .custom-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+        
+        .custom-btn {
+            padding: 8px 12px;
+            margin: 2px;
+            background: rgba(0,123,255,0.8);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .custom-btn:hover {
+            background: rgba(0,123,255,1);
+            transform: translateY(-1px);
+        }
+        
+        .custom-btn.success {
+            background: rgba(40,167,69,0.8);
+        }
+        
+        .custom-btn.success:hover {
+            background: rgba(40,167,69,1);
+        }
+        
+        /* Style pour les messages d'info */
+        .info-panel {
+            position: absolute;
+            bottom: 60px;
+            left: 10px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            max-width: 300px;
+            backdrop-filter: blur(10px);
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            #unity-container {
+                width: 100% !important;
+                height: auto !important;
+            }
+            
+            #unity-canvas {
+                width: 100% !important;
+                height: auto !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="unity-container" class="unity-desktop">
+        <canvas id="unity-canvas" width="960" height="600" tabindex="-1"></canvas>
+        
+        <!-- Barre de chargement -->
+        <div id="unity-loading-bar">
+            <div id="unity-logo"></div>
+            <div id="unity-progress-bar-empty">
+                <div id="unity-progress-bar-full"></div>
+            </div>
+            <div class="loading-text">Chargement de Unity WebGL...</div>
+        </div>
+        
+        <!-- Zone d'affichage des messages -->
+        <div id="unity-warning"></div>
+        
+        <!-- Footer avec infos et bouton plein écran -->
+        <div id="unity-footer">
+            <div id="unity-build-title">Project VisitedAugm</div>
+            <button id="unity-fullscreen-button" title="Plein écran"></button>
+        </div>
+        
+        <!-- Panneau d'informations -->
+        <div class="info-panel" id="info-panel" style="display: none;">
+            <strong>🎮 Unity WebGL</strong><br>
+            Utilisez F11 pour le plein écran<br>
+            Ouvrez la console (F12) pour les logs
+        </div>
+    </div>
+
+    <!-- Scripts Unity WebGL -->
+    <script src="unity-loader.js"></script>
+    <script>
+        // Configuration et chargement simple
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("🚀 Démarrage de Unity WebGL...");
+            
+            // Afficher le panneau d'info après 2 secondes
+            setTimeout(() => {
+                document.getElementById('info-panel').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('info-panel').style.display = 'none';
+                }, 5000);
+            }, 2000);
+            
+            // Configuration Unity avec le loader
+            const unityLoader = new UnityWebGLLoader({
+                buildUrl: "Build",
+                canvasId: "unity-canvas",
+                containerId: "unity-container",
+                companyName: "DefaultCompany",
+                productName: "Project VisitedAugm",
+                productVersion: "1.0.0",
+                canvasWidth: 960,
+                canvasHeight: 600,
+                showBanner: true,
+                autoSyncPersistentData: false
+            });
+            
+            // Événements personnalisés
+            document.addEventListener('unity-progress', (event) => {
+                const { percentage } = event.detail;
+                console.log(`📊 Progression: ${percentage}%`);
+            });
+            
+            document.addEventListener('unity-loaded', (event) => {
+                console.log("✅ Unity WebGL chargé avec succès!");
+                
+                // Ajouter des boutons personnalisés
+                addCustomButtons(unityLoader);
+                
+                // Message de bienvenue
+                setTimeout(() => {
+                    unityLoader.showBanner("🎉 Unity WebGL chargé! Profitez de votre expérience AR.", "success");
+                }, 1000);
+            });
+            
+            document.addEventListener('unity-error', (event) => {
+                console.error("❌ Erreur Unity:", event.detail.error);
+            });
+            
+            // Chargement
+            unityLoader.load();
+            
+            // Stockage global pour accès externe
+            window.unityGame = unityLoader;
+        });
+        
+        // Fonction pour ajouter des boutons personnalisés
+        function addCustomButtons(unityLoader) {
+            const controlsDiv = document.createElement('div');
+            controlsDiv.className = 'custom-controls';
+            
+            // Bouton info
+            const infoButton = document.createElement('button');
+            infoButton.textContent = 'ℹ️ Info';
+            infoButton.className = 'custom-btn';
+            infoButton.onclick = () => {
+                const info = unityLoader.getInfo();
+                unityLoader.showBanner(`Unity chargé: ${info.isLoaded}, Version: ${info.config.productVersion}`, 'info');
+            };
+            
+            // Bouton qualité (exemple)
+            const qualityButton = document.createElement('button');
+            qualityButton.textContent = '⚙️ Qualité';
+            qualityButton.className = 'custom-btn';
+            qualityButton.onclick = () => {
+                // Exemple d'interaction avec Unity
+                unityLoader.sendMessage("QualityManager", "ToggleQuality", "");
+                unityLoader.showBanner("Qualité graphique ajustée", "info");
+            };
+            
+            // Bouton screenshot (exemple)
+            const screenshotButton = document.createElement('button');
+            screenshotButton.textContent = '📷 Capture';
+            screenshotButton.className = 'custom-btn success';
+            screenshotButton.onclick = () => {
+                // Exemple de capture d'écran
+                unityLoader.sendMessage("ScreenshotManager", "TakeScreenshot", "");
+                unityLoader.showBanner("Capture d'écran prise!", "success");
+            };
+            
+            controlsDiv.appendChild(infoButton);
+            controlsDiv.appendChild(qualityButton);
+            controlsDiv.appendChild(screenshotButton);
+            
+            document.querySelector('#unity-container').appendChild(controlsDiv);
+        }
+        
+        // Raccourcis clavier
+        document.addEventListener('keydown', (event) => {
+            if (!window.unityGame) return;
+            
+            switch(event.key) {
+                case 'F11':
+                    event.preventDefault();
+                    window.unityGame.toggleFullscreen();
+                    break;
+                case 'Escape':
+                    // Exemple: menu pause
+                    window.unityGame.sendMessage("GameManager", "TogglePause", "");
+                    break;
+                case 'r':
+                case 'R':
+                    if (event.ctrlKey) {
+                        event.preventDefault();
+                        // Redémarrage (reload)
+                        window.location.reload();
+                    }
+                    break;
+            }
+        });
+        
+        // Gestion de la visibilité de la page (pause automatique)
+        document.addEventListener('visibilitychange', () => {
+            if (window.unityGame && window.unityGame.getInfo().isLoaded) {
+                const isPaused = document.visibilityState === 'hidden';
+                window.unityGame.setPaused(isPaused);
+                console.log(isPaused ? '⏸️ Jeu mis en pause (onglet caché)' : '▶️ Jeu repris');
+            }
+        });
+    </script>
+</body>
+</html> 
